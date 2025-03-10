@@ -20,7 +20,7 @@ def inject_now():
 
 # Paths to the data files
 EXCEL_FILE_PATH = 'attached_assets/OJT Schedule Certificate.xlsx'
-ZIP_FILE_PATH = 'attached_assets/renamed_certificates_2025.zip'
+ZIP_FILE_PATH = 'attached_assets/OJT Student\'s Certificate_2025.zip'
 
 # Global variable to store student data
 STUDENT_DATA = []
