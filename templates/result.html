@@ -4,50 +4,64 @@
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="card mb-4 certificate-card">
-            <div class="card-header bg-primary text-white">
-                <h3 class="card-title mb-0"><i class="fas fa-user-graduate me-2"></i> Student Information</h3>
+            <div class="card-header bg-success text-white">
+                <h3 class="card-title mb-0"><i class="fas fa-user-graduate me-2"></i> Certificate Found</h3>
             </div>
             <div class="card-body">
                 <div class="alert alert-success">
-                    <i class="fas fa-check-circle me-2"></i> Student found! Below are the details.
+                    <i class="fas fa-check-circle me-2"></i> Your certificate is ready for download!
                 </div>
 
+                <h4 class="mb-3">Student Information</h4>
                 <div class="table-responsive student-info-table">
                     <table class="table table-bordered">
                         <tbody>
+                            {% set important_fields = ['Student ID', 'Name', 'Reference No', 'Reference Number', 'Course', 'Department', 'Date'] %}
+                            
+                            {% for key in important_fields %}
+                                {% if key in student %}
+                                <tr>
+                                    <th style="width: 40%">{{ key }}</th>
+                                    <td>{{ student[key] }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                            
                             {% for key, value in student.items() %}
-                            <tr>
-                                <th style="width: 40%">{{ key }}</th>
-                                <td>{{ value }}</td>
-                            </tr>
+                                {% if key not in important_fields %}
+                                <tr>
+                                    <th style="width: 40%">{{ key }}</th>
+                                    <td>{{ value }}</td>
+                                </tr>
+                                {% endif %}
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
 
-                <div class="text-center mt-4">
+                <div class="text-center mt-5 mb-4">
                     <a href="{{ url_for('download_certificate') }}" class="btn btn-success btn-lg certificate-download-btn">
                         <i class="fas fa-download me-2"></i> Download Certificate
                     </a>
-                    <p class="text-muted mt-2">Click to download the certificate based on the reference number</p>
+                    <p class="text-muted mt-2">Click the button to download your certificate</p>
                 </div>
             </div>
             <div class="card-footer text-center">
                 <a href="{{ url_for('index') }}" class="btn btn-outline-secondary back-button">
-                    <i class="fas fa-arrow-left me-2"></i> Back to Home
+                    <i class="fas fa-arrow-left me-2"></i> Back to Search
                 </a>
             </div>
         </div>
 
         <div class="card bg-dark-subtle">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-info-circle me-2"></i> Certificate Verification</h5>
+                <h5 class="card-title"><i class="fas fa-info-circle me-2"></i> Verification Details</h5>
                 <p class="card-text">
-                    This certificate is verified based on the student's reference number. 
-                    The certificate can be downloaded once and is linked to the specific student.
+                    This certificate has been verified based on your student records and reference number. 
+                    If you need to download the certificate again, you can return to the home page and search using your Student ID.
                 </p>
                 <p class="card-text text-muted">
-                    <small>If you encounter any issues downloading the certificate, please try searching again or contact the administrator.</small>
+                    <small>If you encounter any issues downloading your certificate, please try again or contact support for assistance.</small>
                 </p>
             </div>
         </div>

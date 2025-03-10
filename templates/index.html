@@ -3,68 +3,39 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <div class="upload-section mb-4">
-            <h2 class="mb-3"><span class="step-number">1</span>Upload Files</h2>
-            <p class="mb-4">Upload the Excel file containing student data and the ZIP file containing certificates.</p>
-            
-            <form id="upload-form" action="{{ url_for('upload_files') }}" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="excel-file" class="form-label">Excel File</label>
-                            <div class="input-group">
-                                <input type="file" class="form-control" id="excel-file" name="excel_file" accept=".xlsx,.xls" required>
-                                <label class="input-group-text" for="excel-file" id="excel-file-label">Choose Excel file</label>
+        <div class="card mb-4 certificate-card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="fas fa-certificate me-2"></i> Certificate Verification</h3>
+            </div>
+            <div class="card-body">
+                <div class="p-4 text-center">
+                    <h2 class="mb-3">Find Your Certificate</h2>
+                    <p class="lead mb-4">Enter your Student ID to verify and download your certificate</p>
+                    
+                    <form id="search-form" action="{{ url_for('search_student') }}" method="post" class="needs-validation" novalidate>
+                        <div class="mb-4">
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                                <input type="text" class="form-control" id="student-id" name="student_id" 
+                                    placeholder="Enter Student ID" required autofocus>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search me-2"></i> Search
+                                </button>
                             </div>
-                            <div class="form-text">Upload the OJT Schedule Excel file</div>
+                            <div class="form-text mt-2">Enter your Student ID exactly as it appears in your records</div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="zip-file" class="form-label">ZIP File</label>
-                            <div class="input-group">
-                                <input type="file" class="form-control" id="zip-file" name="zip_file" accept=".zip" required>
-                                <label class="input-group-text" for="zip-file" id="zip-file-label">Choose ZIP file</label>
-                            </div>
-                            <div class="form-text">Upload the ZIP file containing certificates</div>
-                        </div>
-                    </div>
+                    </form>
                 </div>
-                
-                <div class="text-center mt-3">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-upload me-2"></i> Upload Files
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
         
-        <div class="search-section">
-            <h2 class="mb-3"><span class="step-number">2</span>Search Certificate</h2>
-            <p class="mb-4">Enter the Student ID to verify and download the certificate.</p>
-            
-            <form id="search-form" action="{{ url_for('search_student') }}" method="post" class="needs-validation" novalidate>
-                <div class="mb-3">
-                    <label for="student-id" class="form-label">Student ID</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-id-card"></i></span>
-                        <input type="text" class="form-control" id="student-id" name="student_id" placeholder="Enter Student ID" required>
-                        <button class="btn btn-primary" type="submit">
-                            <i class="fas fa-search me-2"></i> Search
-                        </button>
-                    </div>
-                    <div class="form-text">Enter the Student ID exactly as it appears in the records</div>
-                </div>
-            </form>
-        </div>
-        
-        <div class="card mt-4 bg-dark-subtle certificate-card">
+        <div class="card bg-dark-subtle certificate-card">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-info-circle me-2"></i> How it works</h5>
                 <ul class="list-group list-group-flush bg-transparent">
-                    <li class="list-group-item bg-transparent">1. Upload the Excel file with student details and the ZIP file with certificates</li>
-                    <li class="list-group-item bg-transparent">2. Enter the Student ID to search for a specific student</li>
-                    <li class="list-group-item bg-transparent">3. View the student's details and download their certificate</li>
+                    <li class="list-group-item bg-transparent">1. Enter your Student ID in the search box above</li>
+                    <li class="list-group-item bg-transparent">2. View your details to verify your information</li>
+                    <li class="list-group-item bg-transparent">3. Download your certificate with a single click</li>
                 </ul>
             </div>
         </div>

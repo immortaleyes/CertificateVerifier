@@ -5,20 +5,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // File upload validation
-    const excelFileInput = document.getElementById('excel-file');
-    const zipFileInput = document.getElementById('zip-file');
-    const uploadForm = document.getElementById('upload-form');
+    // Search form validation
     const searchForm = document.getElementById('search-form');
-    
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', function(event) {
-            if (!excelFileInput.files.length || !zipFileInput.files.length) {
-                event.preventDefault();
-                showAlert('Please select both Excel and ZIP files', 'danger');
-            }
-        });
-    }
     
     if (searchForm) {
         searchForm.addEventListener('submit', function(event) {
@@ -27,21 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 event.preventDefault();
                 showAlert('Please enter a Student ID', 'warning');
             }
-        });
-    }
-    
-    // File input label update
-    if (excelFileInput) {
-        excelFileInput.addEventListener('change', function() {
-            const fileName = this.files[0] ? this.files[0].name : 'Choose Excel file';
-            document.getElementById('excel-file-label').textContent = fileName;
-        });
-    }
-    
-    if (zipFileInput) {
-        zipFileInput.addEventListener('change', function() {
-            const fileName = this.files[0] ? this.files[0].name : 'Choose ZIP file';
-            document.getElementById('zip-file-label').textContent = fileName;
         });
     }
     

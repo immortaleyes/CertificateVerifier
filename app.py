@@ -5,7 +5,6 @@ import pandas as pd
 import zipfile
 import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
-from werkzeug.utils import secure_filename
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -18,71 +17,34 @@ app.secret_key = os.environ.get("SESSION_SECRET", "default-secret-key-for-dev")
 def inject_now():
     return {'now': datetime.datetime.utcnow}
 
-# Allowed file extensions
-ALLOWED_EXTENSIONS_EXCEL = {'xlsx', 'xls'}
-ALLOWED_EXTENSIONS_ZIP = {'zip'}
+# Paths to the data files
+EXCEL_FILE_PATH = 'data/OJT Schedule Certificate.xlsx'
+ZIP_FILE_PATH = 'data/renamed_certificates_2025.zip'
 
-def allowed_file_excel(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS_EXCEL
+# Global variable to store student data
+STUDENT_DATA = []
 
-def allowed_file_zip(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS_ZIP
+def load_student_data():
+    """Load student data from Excel file"""
+    global STUDENT_DATA
+    try:
+        logging.debug(f"Loading Excel file from {EXCEL_FILE_PATH}")
+        df = pd.read_excel(EXCEL_FILE_PATH)
+        STUDENT_DATA = df.to_dict(orient='records')
+        logging.info(f"Loaded {len(STUDENT_DATA)} student records")
+    except Exception as e:
+        logging.error(f"Error loading student data: {str(e)}")
+        STUDENT_DATA = []
+
+# Load student data when app starts
+load_student_data()
 
 @app.route('/')
 def index():
-    # Clear session data when returning to the home page
-    if 'excel_data' in session:
-        session.pop('excel_data')
-    if 'zip_file' in session:
-        session.pop('zip_file')
+    # Ensure student data is loaded
+    if not STUDENT_DATA:
+        load_student_data()
     return render_template('index.html')
-
-@app.route('/upload', methods=['POST'])
-def upload_files():
-    # Check if files are present in the request
-    if 'excel_file' not in request.files or 'zip_file' not in request.files:
-        flash('Both Excel and ZIP files are required', 'danger')
-        return redirect(request.url)
-    
-    excel_file = request.files['excel_file']
-    zip_file = request.files['zip_file']
-    
-    # Check if filenames are empty
-    if excel_file.filename == '' or zip_file.filename == '':
-        flash('Both Excel and ZIP files are required', 'danger')
-        return redirect(request.url)
-    
-    # Check file types
-    if not allowed_file_excel(excel_file.filename):
-        flash('Invalid Excel file format. Please upload .xlsx or .xls files.', 'danger')
-        return redirect(request.url)
-    
-    if not allowed_file_zip(zip_file.filename):
-        flash('Invalid ZIP file format. Please upload .zip files.', 'danger')
-        return redirect(request.url)
-    
-    # Process Excel file
-    try:
-        # Read Excel into DataFrame
-        df = pd.read_excel(excel_file)
-        # Convert DataFrame to dict and store in session
-        excel_data = df.to_dict(orient='records')
-        session['excel_data'] = excel_data
-        
-        # Store the ZIP file in memory
-        zip_content = zip_file.read()
-        zip_io = io.BytesIO(zip_content)
-        session['zip_file'] = zip_io.getvalue()
-        
-        flash('Files uploaded successfully! You can now search for a student by ID.', 'success')
-        return redirect(url_for('index'))
-    
-    except Exception as e:
-        logging.error(f"Error processing files: {str(e)}")
-        flash(f'Error processing files: {str(e)}', 'danger')
-        return redirect(url_for('index'))
 
 @app.route('/search', methods=['POST'])
 def search_student():
@@ -92,16 +54,16 @@ def search_student():
         flash('Please enter a Student ID', 'warning')
         return redirect(url_for('index'))
     
-    # Check if excel data exists in session
-    if 'excel_data' not in session:
-        flash('Please upload the Excel file first', 'warning')
-        return redirect(url_for('index'))
+    # Make sure student data is loaded
+    if not STUDENT_DATA:
+        load_student_data()
+        if not STUDENT_DATA:
+            flash('System error: Could not load student data', 'danger')
+            return redirect(url_for('index'))
     
-    excel_data = session['excel_data']
-    
-    # Search for student in the excel data
+    # Search for student in the loaded data
     found_student = None
-    for student in excel_data:
+    for student in STUDENT_DATA:
         # Convert all values to string for comparison
         student_data = {k: str(v) for k, v in student.items()}
         if 'Student ID' in student_data and student_data['Student ID'] == student_id:
@@ -127,8 +89,8 @@ def show_result():
 
 @app.route('/download_certificate')
 def download_certificate():
-    if 'found_student' not in session or 'zip_file' not in session:
-        flash('Missing required data. Please start over.', 'danger')
+    if 'found_student' not in session:
+        flash('No student data found. Please search for a student first.', 'warning')
         return redirect(url_for('index'))
     
     student = session['found_student']
@@ -144,13 +106,15 @@ def download_certificate():
         flash('No reference number found for this student', 'danger')
         return redirect(url_for('show_result'))
     
-    # Load zip file from session
-    zip_bytes = session.get('zip_file')
-    zip_io = io.BytesIO(zip_bytes)
-    
     try:
+        # Check if ZIP file exists
+        if not os.path.exists(ZIP_FILE_PATH):
+            flash('Certificate archive not found', 'danger')
+            logging.error(f"ZIP file not found: {ZIP_FILE_PATH}")
+            return redirect(url_for('show_result'))
+        
         # Open the zip file
-        with zipfile.ZipFile(zip_io, 'r') as zip_ref:
+        with zipfile.ZipFile(ZIP_FILE_PATH, 'r') as zip_ref:
             # List all files in the zip
             file_list = zip_ref.namelist()
             
