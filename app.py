@@ -30,8 +30,29 @@ def load_student_data():
     global STUDENT_DATA
     try:
         logging.debug(f"Loading Excel file from {EXCEL_FILE_PATH}")
-        df = pd.read_excel(EXCEL_FILE_PATH)
+        # Use header=1 to skip the first row (which contains the title)
+        df = pd.read_excel(EXCEL_FILE_PATH, header=1)
+        
+        # Rename columns to standardize (Student Id -> Student ID)
+        if 'Student Id' in df.columns:
+            df = df.rename(columns={'Student Id': 'Student ID'})
+            
+        # Also rename other important columns for consistency
+        column_mapping = {
+            'Name of the Student': 'Name',
+            'Programme/College': 'Course',
+            'Reference No': 'Reference Number'
+        }
+        df = df.rename(columns=column_mapping)
+        
+        # Convert to records
         STUDENT_DATA = df.to_dict(orient='records')
+        
+        # Log column names and sample data for debugging
+        logging.debug(f"Columns in Excel: {df.columns.tolist()}")
+        if len(df) > 0:
+            logging.debug(f"Sample Student ID: {df.iloc[0]['Student ID'] if 'Student ID' in df.columns else 'Not found'}")
+            
         logging.info(f"Loaded {len(STUDENT_DATA)} student records")
     except Exception as e:
         logging.error(f"Error loading student data: {str(e)}")
@@ -115,10 +136,14 @@ def download_certificate():
 
     # Get the reference number from the student data
     reference_no = None
-    if 'Reference No' in student and pd.notna(student['Reference No']):
-        reference_no = str(student['Reference No']).replace('.0', '') if str(student['Reference No']).endswith('.0') else str(student['Reference No'])
-    elif 'Reference Number' in student and pd.notna(student['Reference Number']):
-        reference_no = str(student['Reference Number']).replace('.0', '') if str(student['Reference Number']).endswith('.0') else str(student['Reference Number'])
+    
+    # Check all possible reference column names
+    for ref_column in ['Reference Number', 'Reference No']:
+        if ref_column in student and pd.notna(student[ref_column]):
+            value = student[ref_column]
+            reference_no = str(value).replace('.0', '') if str(value).endswith('.0') else str(value)
+            logger.debug(f"Found reference number '{reference_no}' in column '{ref_column}'")
+            break
     
     if not reference_no:
         logger.error("Missing reference number for student")
