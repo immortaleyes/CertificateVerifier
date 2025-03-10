@@ -16,7 +16,12 @@
                 
                 <div class="alert alert-danger">
                     <i class="fas fa-info-circle me-2"></i> 
-                    <strong>Error:</strong> {{ error_message }}
+                    <strong>Error:</strong> 
+                    <div class="mt-2">
+                        {% for line in error_message.split('\n') %}
+                            <p class="mb-1">{{ line }}</p>
+                        {% endfor %}
+                    </div>
                 </div>
                 
                 <div class="mt-5">
@@ -24,9 +29,12 @@
                         <i class="fas fa-arrow-left me-2"></i> Back to Search
                     </a>
                     {% if student_id %}
-                    <a href="{{ url_for('search_student', student_id=student_id) }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-redo me-2"></i> Try Again
-                    </a>
+                    <form action="{{ url_for('search_student') }}" method="post" class="d-inline">
+                        <input type="hidden" name="student_id" value="{{ student_id }}">
+                        <button type="submit" class="btn btn-outline-secondary">
+                            <i class="fas fa-redo me-2"></i> Try Again
+                        </button>
+                    </form>
                     {% endif %}
                 </div>
             </div>

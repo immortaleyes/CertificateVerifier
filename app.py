@@ -166,6 +166,11 @@ def download_certificate():
             file_list = zip_ref.namelist()
             logger.debug(f"Found {len(file_list)} files in archive")
             
+            # Log some sample filenames for debugging
+            if len(file_list) > 0:
+                sample_size = min(5, len(file_list))
+                logger.debug(f"Sample filenames: {file_list[:sample_size]}")
+            
             # Find the certificate by reference number
             certificate_file = None
             
