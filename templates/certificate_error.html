@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card mb-4 certificate-card">
+            <div class="card-header bg-warning text-dark">
+                <h3 class="card-title mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Certificate Issue</h3>
+            </div>
+            <div class="card-body text-center p-5">
+                <div class="mb-4">
+                    <i class="fas fa-file-pdf fa-5x text-muted mb-4"></i>
+                    <h2 class="mb-3">Certificate Error</h2>
+                    <p class="lead">We found your student record, but there was an issue with your certificate.</p>
+                </div>
+                
+                <div class="alert alert-danger">
+                    <i class="fas fa-info-circle me-2"></i> 
+                    <strong>Error:</strong> {{ error_message }}
+                </div>
+                
+                <div class="mt-5">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Search
+                    </a>
+                    {% if student_id %}
+                    <a href="{{ url_for('search_student', student_id=student_id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-redo me-2"></i> Try Again
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="card bg-dark-subtle">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-question-circle me-2"></i> Need Help?</h5>
+                <p class="card-text">
+                    If you continue to experience issues accessing your certificate, please contact support with your Student ID and the error message shown above.
+                </p>
+                <p class="card-text text-muted">
+                    <small>This could be due to a missing certificate file or incorrect reference number in our system.</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

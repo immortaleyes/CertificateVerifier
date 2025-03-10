@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card mb-4 certificate-card">
+            <div class="card-header bg-danger text-white">
+                <h3 class="card-title mb-0"><i class="fas fa-exclamation-circle me-2"></i> Student Not Found</h3>
+            </div>
+            <div class="card-body text-center p-5">
+                <div class="mb-4">
+                    <i class="fas fa-search fa-5x text-muted mb-4"></i>
+                    <h2 class="mb-3">No Records Found</h2>
+                    <p class="lead">We couldn't find any student records matching ID: <strong>{{ student_id }}</strong></p>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle me-2"></i> 
+                    Please check if you've entered the correct Student ID and try again.
+                </div>
+                
+                <div class="mt-5">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Search
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card bg-dark-subtle">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-question-circle me-2"></i> Need Help?</h5>
+                <p class="card-text">
+                    If you're having trouble locating your certificate or believe your Student ID should be in our system, please contact support for assistance.
+                </p>
+                <p class="card-text text-muted">
+                    <small>Make sure you're using the same Student ID that appears on your official records.</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

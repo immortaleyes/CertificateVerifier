@@ -4,10 +4,11 @@ import logging
 import pandas as pd
 import zipfile
 import datetime
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default-secret-key-for-dev")
@@ -48,7 +49,7 @@ def index():
 
 @app.route('/search', methods=['POST'])
 def search_student():
-    student_id = request.form.get('student_id')
+    student_id = request.form.get('student_id', '').strip()
     
     if not student_id:
         flash('Please enter a Student ID', 'warning')
@@ -65,7 +66,7 @@ def search_student():
     found_student = None
     for student in STUDENT_DATA:
         # Convert all values to string for comparison
-        student_data = {k: str(v) for k, v in student.items()}
+        student_data = {k: str(v).strip() for k, v in student.items() if v is not None}
         if 'Student ID' in student_data and student_data['Student ID'] == student_id:
             found_student = student
             break
@@ -73,10 +74,12 @@ def search_student():
     if found_student:
         # Store found student in session for the result page
         session['found_student'] = found_student
+        logger.info(f"Found student with ID: {student_id}")
         return redirect(url_for('show_result'))
     else:
-        flash(f'No student found with ID: {student_id}', 'danger')
-        return redirect(url_for('index'))
+        logger.warning(f"No student found with ID: {student_id}")
+        # Instead of redirecting with a flash message, render the not_found template
+        return render_template('not_found.html', student_id=student_id)
 
 @app.route('/result')
 def show_result():
@@ -85,7 +88,17 @@ def show_result():
         return redirect(url_for('index'))
     
     student = session['found_student']
-    return render_template('result.html', student=student)
+    # Format the student data for display
+    formatted_student = {}
+    for key, value in student.items():
+        if pd.notna(value):  # Skip NaN values
+            # Format special fields
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                formatted_student[key] = str(value).replace('.0', '') if str(value).endswith('.0') else str(value)
+            else:
+                formatted_student[key] = str(value)
+    
+    return render_template('result.html', student=formatted_student)
 
 @app.route('/download_certificate')
 def download_certificate():
@@ -95,28 +108,38 @@ def download_certificate():
     
     student = session['found_student']
     
+    # Get the student ID for error handling
+    student_id = None
+    if 'Student ID' in student and pd.notna(student['Student ID']):
+        student_id = str(student['Student ID']).strip()
+
     # Get the reference number from the student data
     reference_no = None
-    if 'Reference No' in student:
-        reference_no = str(student['Reference No'])
-    elif 'Reference Number' in student:
-        reference_no = str(student['Reference Number'])
+    if 'Reference No' in student and pd.notna(student['Reference No']):
+        reference_no = str(student['Reference No']).replace('.0', '') if str(student['Reference No']).endswith('.0') else str(student['Reference No'])
+    elif 'Reference Number' in student and pd.notna(student['Reference Number']):
+        reference_no = str(student['Reference Number']).replace('.0', '') if str(student['Reference Number']).endswith('.0') else str(student['Reference Number'])
     
     if not reference_no:
-        flash('No reference number found for this student', 'danger')
-        return redirect(url_for('show_result'))
+        logger.error("Missing reference number for student")
+        # Render certificate error template instead of redirect and flash
+        return render_template('certificate_error.html', 
+                             error_message="No reference number found for this student record.",
+                             student_id=student_id)
     
     try:
         # Check if ZIP file exists
         if not os.path.exists(ZIP_FILE_PATH):
-            flash('Certificate archive not found', 'danger')
-            logging.error(f"ZIP file not found: {ZIP_FILE_PATH}")
-            return redirect(url_for('show_result'))
+            logger.error(f"ZIP file not found: {ZIP_FILE_PATH}")
+            return render_template('certificate_error.html',
+                                 error_message="Certificate archive not found. Please contact support.",
+                                 student_id=student_id)
         
         # Open the zip file
         with zipfile.ZipFile(ZIP_FILE_PATH, 'r') as zip_ref:
             # List all files in the zip
             file_list = zip_ref.namelist()
+            logger.debug(f"Found {len(file_list)} files in archive")
             
             # Find the certificate by reference number
             certificate_file = None
@@ -124,29 +147,39 @@ def download_certificate():
                 # Check if the file name contains the reference number
                 if reference_no in file_name:
                     certificate_file = file_name
+                    logger.info(f"Found matching certificate: {file_name}")
                     break
             
             if not certificate_file:
-                flash(f'Certificate not found for reference number: {reference_no}', 'danger')
-                return redirect(url_for('show_result'))
+                logger.error(f"No certificate found for reference number: {reference_no}")
+                return render_template('certificate_error.html',
+                                     error_message=f"Certificate not found for reference number: {reference_no}",
+                                     student_id=student_id)
             
             # Extract the certificate file
             certificate_data = zip_ref.read(certificate_file)
             certificate_io = io.BytesIO(certificate_data)
             certificate_io.seek(0)
             
+            # Get student name for the download filename
+            student_name = "Unknown"
+            if 'Name' in student and pd.notna(student['Name']):
+                student_name = str(student['Name']).strip().replace(' ', '_')
+            
             # Send the file to the client
+            logger.info(f"Sending certificate file for reference: {reference_no}")
             return send_file(
                 certificate_io,
                 as_attachment=True,
-                download_name=f"Certificate_{reference_no}.pdf",
+                download_name=f"OJT_Certificate_{student_name}_{reference_no}.pdf",
                 mimetype='application/pdf'
             )
     
     except Exception as e:
-        logging.error(f"Error extracting certificate: {str(e)}")
-        flash(f'Error retrieving certificate: {str(e)}', 'danger')
-        return redirect(url_for('show_result'))
+        logger.error(f"Error extracting certificate: {str(e)}")
+        return render_template('certificate_error.html',
+                             error_message=f"Error retrieving certificate: {str(e)}",
+                             student_id=student_id)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
