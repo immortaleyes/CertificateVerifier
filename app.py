@@ -7,7 +7,7 @@ import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
@@ -168,18 +168,68 @@ def download_certificate():
             
             # Find the certificate by reference number
             certificate_file = None
+            
+            # First try with the full reference number
             for file_name in file_list:
-                # Check if the file name contains the reference number
                 if reference_no in file_name:
                     certificate_file = file_name
-                    logger.info(f"Found matching certificate: {file_name}")
+                    logger.info(f"Found matching certificate with full reference: {file_name}")
                     break
+                    
+            # If not found, extract the numeric part of the reference number
+            if not certificate_file and '/' in reference_no:
+                # Extract the numeric part (e.g., "328" from "EDC/OJT/2025/03/328")
+                ref_parts = reference_no.split('/')
+                if len(ref_parts) > 0:
+                    # Get the last part which is typically the numeric identifier
+                    ref_number = ref_parts[-1]
+                    logger.debug(f"Extracted numeric part from reference: {ref_number}")
+                    
+                    # Try again with just the number (format: "328_Name.png")
+                    for file_name in file_list:
+                        if file_name.startswith(ref_number + '_'):
+                            certificate_file = file_name
+                            logger.info(f"Found matching certificate with ref number {ref_number}: {file_name}")
+                            break
+            
+            # If still not found, try to match by student name
+            if not certificate_file and 'Name' in student and pd.notna(student['Name']):
+                student_name = str(student['Name']).strip()
+                logger.debug(f"Trying to match by student name: {student_name}")
+                
+                # Try to find a file containing the student's name (case insensitive)
+                for file_name in file_list:
+                    if student_name.lower() in file_name.lower():
+                        certificate_file = file_name
+                        logger.info(f"Found matching certificate with student name: {file_name}")
+                        break
             
             if not certificate_file:
                 logger.error(f"No certificate found for reference number: {reference_no}")
+                # Detailed error message with all attempts
+                error_message = (
+                    f"We could not find your certificate with reference number: {reference_no}.\n"
+                    f"The system checked for your certificate in the following ways:\n"
+                    f"1. Using full reference number: {reference_no}\n"
+                )
+                
+                # Add numeric part message if applicable
+                if '/' in reference_no:
+                    ref_parts = reference_no.split('/')
+                    ref_number = ref_parts[-1]
+                    error_message += f"2. Using reference number: {ref_number}\n"
+                
+                # Add student name info if applicable
+                if 'Name' in student and pd.notna(student['Name']):
+                    student_name = str(student['Name']).strip()
+                    error_message += f"3. Using your name: {student_name}\n"
+                
+                error_message += "\nPlease contact support for assistance."
+                
                 return render_template('certificate_error.html',
-                                     error_message=f"Certificate not found for reference number: {reference_no}",
-                                     student_id=student_id)
+                                     error_message=error_message,
+                                     student_id=student_id,
+                                     reference_no=reference_no)
             
             # Extract the certificate file
             certificate_data = zip_ref.read(certificate_file)
