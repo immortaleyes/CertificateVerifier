@@ -19,8 +19,8 @@ def inject_now():
     return {'now': datetime.datetime.utcnow}
 
 # Paths to the data files
-EXCEL_FILE_PATH = 'data/OJT Schedule Certificate.xlsx'
-ZIP_FILE_PATH = 'data/renamed_certificates_2025.zip'
+EXCEL_FILE_PATH = 'attached_assets/OJT Schedule Certificate.xlsx'
+ZIP_FILE_PATH = 'attached_assets/renamed_certificates_2025.zip'
 
 # Global variable to store student data
 STUDENT_DATA = []
@@ -193,11 +193,18 @@ def download_certificate():
             
             # Send the file to the client
             logger.info(f"Sending certificate file for reference: {reference_no}")
+            
+            # Determine the file extension from the original filename (most likely PNG)
+            file_extension = os.path.splitext(certificate_file)[1].lower() or '.png'
+            
+            # Set the correct mimetype based on file extension
+            mimetype = 'image/png' if file_extension == '.png' else 'application/octet-stream'
+            
             return send_file(
                 certificate_io,
                 as_attachment=True,
-                download_name=f"OJT_Certificate_{student_name}_{reference_no}.pdf",
-                mimetype='application/pdf'
+                download_name=f"OJT_Certificate_{student_name}_{reference_no}{file_extension}",
+                mimetype=mimetype
             )
     
     except Exception as e:
